@@ -246,6 +246,13 @@
   .share-btn:hover { background: #6E2439; border-color: #6E2439; }
   .share-btn.copied { background: var(--ink); border-color: var(--ink); }
 
+  .share-hint {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 10px 0 0;
+  }
+  .share-hint.hidden { display: none; }
+
   .hidden { display: none !important; }
 
   @media (max-width: 420px) {
@@ -296,6 +303,7 @@
         <button class="retake-btn" id="retake-btn">Retake the quiz</button>
         <button class="share-btn" id="share-btn">Share your result</button>
       </div>
+      <p class="share-hint hidden" id="share-hint">A message is copied to your clipboard — paste it into a text, email, or social post to share.</p>
     </div>
 
   </div>
@@ -416,6 +424,7 @@
   document.getElementById('retake-btn').addEventListener('click', () => {
     currentQuestion = 0;
     answers = [];
+    document.getElementById('share-hint').classList.add('hidden');
     screenResult.classList.add('hidden');
     screenQuestion.classList.remove('hidden');
     renderQuestion();
@@ -550,12 +559,15 @@
 
   function showCopiedState(btn) {
     const original = btn.textContent;
-    btn.textContent = 'Copied — paste anywhere';
+    btn.textContent = 'Copied!';
     btn.classList.add('copied');
+    const hint = document.getElementById('share-hint');
+    hint.classList.remove('hidden');
     setTimeout(() => {
       btn.textContent = original;
       btn.classList.remove('copied');
-    }, 2200);
+      hint.classList.add('hidden');
+    }, 5000);
   }
 </script>
 
