@@ -214,6 +214,12 @@
   }
   .avoid-note strong { color: var(--ink); }
 
+  .result-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
   .retake-btn {
     background: transparent;
     border: 1px solid var(--ink);
@@ -222,10 +228,23 @@
     font-size: 14px;
     padding: 12px 24px;
     cursor: pointer;
-    align-self: flex-start;
     transition: all 0.2s ease;
   }
   .retake-btn:hover { background: var(--ink); color: var(--paper); }
+
+  .share-btn {
+    background: var(--berry);
+    border: 1px solid var(--berry);
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 148px;
+  }
+  .share-btn:hover { background: #6E2439; border-color: #6E2439; }
+  .share-btn.copied { background: var(--ink); border-color: var(--ink); }
 
   .hidden { display: none !important; }
 
@@ -273,13 +292,21 @@
       <div class="palette-label">Colors that work with you</div>
       <div class="palette" id="result-palette"></div>
       <p class="avoid-note" id="result-avoid"></p>
-      <button class="retake-btn" id="retake-btn">Retake the quiz</button>
+      <div class="result-actions">
+        <button class="retake-btn" id="retake-btn">Retake the quiz</button>
+        <button class="share-btn" id="share-btn">Share your result</button>
+      </div>
     </div>
 
   </div>
 </div>
 
 <script>
+  // ---- SITE CONFIG ----
+  // Set this to the actual page on YOUR site where this quiz is embedded
+  // (not the GitHub Pages URL). This is the link people will share.
+  const SITE_PAGE_URL = "https://livingwellforseniors.com/whats-your-color-season/";
+
   // ---- DATA ----
   // Each option carries a warm/cool delta and a clear/muted delta.
   // warm: +1 warm, -1 cool, 0 neutral
@@ -463,6 +490,72 @@
 
     screenQuestion.classList.add('hidden');
     screenResult.classList.remove('hidden');
+
+    // Store the current season title on the share button for later use
+    document.getElementById('share-btn').dataset.season = season.title;
+  }
+
+  // ---- SHARE ----
+  document.getElementById('share-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('share-btn');
+    const seasonTitle = btn.dataset.season || '';
+    const pageUrl = SITE_PAGE_URL;
+    const shareText = `I'm a ${seasonTitle}! Find your color season →`;
+    const clipboardText = `${shareText} ${pageUrl}`;
+
+    // 1. Native share sheet, where available and permitted
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: shareText, url: pageUrl });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return; // user cancelled, do nothing
+        // otherwise fall through to copy methods below
+      }
+    }
+
+    // 2. Modern clipboard API, where permitted
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(clipboardText);
+        showCopiedState(btn);
+        return;
+      } catch (err) {
+        // fall through to legacy method
+      }
+    }
+
+    // 3. Legacy copy method — works in more restricted iframe contexts
+    try {
+      const tempInput = document.createElement('textarea');
+      tempInput.value = clipboardText;
+      tempInput.style.position = 'fixed';
+      tempInput.style.opacity = '0';
+      document.body.appendChild(tempInput);
+      tempInput.focus();
+      tempInput.select();
+      const success = document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      if (success) {
+        showCopiedState(btn);
+        return;
+      }
+    } catch (err) {
+      // fall through to final fallback
+    }
+
+    // 4. Last resort — always works, no permissions needed
+    window.prompt('Copy this link to share:', clipboardText);
+  });
+
+  function showCopiedState(btn) {
+    const original = btn.textContent;
+    btn.textContent = 'Copied — paste anywhere';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = original;
+      btn.classList.remove('copied');
+    }, 2200);
   }
 </script>
 
